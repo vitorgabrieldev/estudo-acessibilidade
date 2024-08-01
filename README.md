@@ -7,6 +7,7 @@
 - [Acessibilidade](#acessibilidade)
 - [SEO](#seo)
 - [Boas Práticas](#boas-práticas)
+- [Base de dados](#base-de-dados)
 
 ## Introdução
 
@@ -374,3 +375,187 @@ Abaixo está um exemplo de como você pode adicionar marcação Schema.org a uma
 - **Design Responsivo**: Garanta que o site seja acessível em diferentes dispositivos.
 - **Segurança**: Use HTTPS para proteger a privacidade dos usuários.
 - **Atualização Regular**: Mantenha o conteúdo atualizado e relevante.
+
+## Base de Dados
+
+Uma boa estrutura de base de dados é essencial para o desempenho e a organização do seu site.
+
+- **Defina Nome e Tipos de Dados Claros**:
+Escolha nomes de colunas e tabelas que sejam claros e descritivos.
+Utilize tipos de dados adequados para cada coluna (e.g., VARCHAR para texto, INT para inteiros).
+
+``` sql
+  CREATE TABLE clientes (
+    cliente_id INT AUTO_INCREMENT PRIMARY KEY,  -- Identificador único do cliente
+    nome VARCHAR(100) NOT NULL,  -- Nome completo do cliente
+    email VARCHAR(255) UNIQUE NOT NULL,  -- Endereço de e-mail único
+    data_nascimento DATE  -- Data de nascimento do cliente
+  );
+```
+#
+- **Use Chaves Primárias e Índices**:
+Defina uma chave primária (PRIMARY KEY) para garantir a unicidade dos registros.
+Adicione índices (INDEX) em colunas que serão frequentemente usadas em consultas para melhorar o desempenho.
+
+``` sql
+  CREATE TABLE produtos (
+    produto_id INT AUTO_INCREMENT PRIMARY KEY,  -- Chave primária
+    nome VARCHAR(100) NOT NULL,  -- Nome do produto
+    preco DECIMAL(10, 2) NOT NULL,  -- Preço do produto
+    categoria_id INT,  -- Chave estrangeira
+    INDEX idx_nome (nome),  -- Índice para pesquisa rápida pelo nome
+    FOREIGN KEY (categoria_id) REFERENCES categorias(categoria_id)  -- Referência à tabela de categorias
+  );
+```
+#
+- **Normalização**:
+Aplique princípios de normalização para reduzir redundâncias e dependências. Comece com a 1ª Forma Normal (1NF) e considere avançar para a 2ª (2NF) e 3ª Forma Normal (3NF) se necessário.
+
+<br>
+
+**1° Forma de Normalização**: Cada coluna deve conter valores atômicos.
+``` sql
+  CREATE TABLE pedidos (
+    pedido_id INT AUTO_INCREMENT PRIMARY KEY,
+    cliente_id INT,
+    data_pedido DATE,
+    total DECIMAL(10, 2)
+  );
+```
+<br>
+
+**2° Forma de Normalização**: Eliminar dependências parciais. Se um pedido pode ter vários itens, crie uma tabela separada para os itens do pedido.
+```sql 
+  CREATE TABLE pedido_itens (
+    item_id INT AUTO_INCREMENT PRIMARY KEY,
+    pedido_id INT,
+    produto_id INT,
+    quantidade INT,
+    FOREIGN KEY (pedido_id) REFERENCES pedidos(pedido_id),
+    FOREIGN KEY (produto_id) REFERENCES produtos(produto_id)
+  );
+```
+
+<br>
+
+**3° Forma de Normalização**: Remova colunas que não são dependentes da chave primária.
+``` sql
+  CREATE TABLE clientes (
+    cliente_id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    endereco_id INT,
+    FOREIGN KEY (endereco_id) REFERENCES enderecos(endereco_id)
+  );
+```
+
+#
+- **Defina Restrições**:
+Utilize restrições como NOT NULL, UNIQUE e FOREIGN KEY para garantir a integridade dos dados.
+
+```sql 
+  CREATE TABLE funcionarios (
+    funcionario_id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    salario DECIMAL(10, 2) CHECK (salario > 0),  -- Restrição de checagem para salários positivos
+    email VARCHAR(255) UNIQUE NOT NULL,  -- E-mail único
+    departamento_id INT,
+    FOREIGN KEY (departamento_id) REFERENCES departamentos(departamento_id)  -- Chave estrangeira
+  );
+```
+
+#
+- **Escolha Apropriada de Tamanho e Precisão**:
+Defina tamanhos e precisões adequados para colunas numéricas e de texto. Por exemplo, evite usar VARCHAR(255) se 50 caracteres forem suficientes.
+
+```sql
+  CREATE TABLE vendas (
+    venda_id INT AUTO_INCREMENT PRIMARY KEY,
+    produto_nome VARCHAR(50) NOT NULL,  -- Nome do produto com tamanho adequado
+    quantidade INT UNSIGNED NOT NULL,  -- Quantidade não negativa
+    preco_unitario DECIMAL(8, 2) NOT NULL  -- Precisão apropriada para valores monetários
+  );
+```
+
+#
+- **Considere o Uso de Default Values**:
+Defina valores padrão para colunas quando apropriado para evitar problemas com dados ausentes.
+
+``` sql
+  CREATE TABLE tarefas (
+    tarefa_id INT AUTO_INCREMENT PRIMARY KEY,
+    descricao VARCHAR(255) NOT NULL,
+    status ENUM('pendente', 'em andamento', 'concluída') DEFAULT 'pendente',  -- Valor padrão
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP  -- Valor padrão para a data de criação
+  );
+```
+
+#
+- **Comentários**:
+Adicione comentários (COMMENT) para descrever a finalidade das colunas e tabelas, ajudando na manutenção futura.
+
+```sql
+  CREATE TABLE contatos (
+    contato_id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Identificador único do contato',
+    nome VARCHAR(100) NOT NULL COMMENT 'Nome completo do contato',
+    telefone VARCHAR(15) COMMENT 'Número de telefone do contato',
+    email VARCHAR(255) UNIQUE COMMENT 'Endereço de e-mail único'
+  );
+```
+#
+- **Documentação e Scripts**:
+Mantenha um script de criação bem documentado e versionado para facilitar o gerenciamento e as atualizações.
+
+``` sql
+  -- Script para criação da tabela de produtos
+  CREATE TABLE produtos (
+      produto_id INT AUTO_INCREMENT PRIMARY KEY,  -- Identificador único do produto
+      nome VARCHAR(100) NOT NULL,  -- Nome do produto
+      preco DECIMAL(10, 2) NOT NULL,  -- Preço do produto
+      categoria_id INT,  -- Referência à tabela de categorias
+      INDEX idx_nome (nome),  -- Índice para otimização de consultas pelo nome
+      FOREIGN KEY (categoria_id) REFERENCES categorias(categoria_id)  -- Chave estrangeira para a tabela de categorias
+  );
+```
+
+#
+
+### Otimizando consultas na base de dados:
+
+- **Use Índices Eficientemente**: 
+  - **Crie Índices**: Índices ajudam a acelerar as buscas. Crie índices em colunas que são frequentemente usadas em cláusulas WHERE, JOIN, ORDER BY e GROUP BY.
+  - **Evite Índices Desnecessários**: Muitos índices podem degradar o desempenho de inserções e atualizações.
+
+``` sql
+  CREATE INDEX idx_nome ON clientes(nome);
+```
+
+#
+
+- **Otimização de Consultas**:
+  - **Utilize EXPLAIN**: Use a palavra-chave EXPLAIN para analisar como o MySQL executa uma consulta e identificar possíveis gargalos.
+
+``` sql
+  EXPLAIN SELECT * FROM pedidos WHERE cliente_id = 1;
+```
+  - **Evite SELECT *...**: Selecione apenas as colunas necessárias para reduzir o volume de dados processados.
+
+``` sql
+  SELECT nome, preco FROM produtos WHERE categoria_id = 2;
+```
+
+  - **Use LIMIT**: Limite o número de registros retornados para consultas grandes.
+
+``` sql
+  SELECT nome FROM produtos ORDER BY preco DESC LIMIT 10;
+```
+#
+
+- **Otimize o Uso de JOIN**:
+  - **Utilize Joins de Forma Eficiente**: Garanta que as colunas usadas para joins estejam indexadas.
+
+``` sql
+  SELECT p.nome, c.nome
+  FROM produtos p
+  JOIN categorias c ON p.categoria_id = c.categoria_id;
+```
